@@ -1,0 +1,488 @@
+swagger: "2.0"
+info:
+  title: ResDesk Profile Service
+  version: 0.0.1
+host: localhost:10018
+basePath: "/"
+schemes:
+- "http"
+- "https"
+paths:
+  /profile/bsu.auth:
+    x-swagger-router-controller: Shibboleth
+    get:
+      summary: Shibboleth Login
+      tags: ["Auth"]
+      description: Process the encrypted BSU login
+      consumes:
+      - "text/plain"
+      produces:
+      - "text/plain"
+      - "text/html"
+      operationId: processBsuLogin
+      parameters:
+        - name: q
+          in: query
+          description: the encrypted login info
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successful response will send no data"
+        302:
+          description: "302 response"
+          headers:
+            Location:
+              type: "string"
+          schema:
+            type: string
+        default:
+          description: "Successful response will send no data"
+          schema:
+            type: string
+  /profile/login:
+    x-swagger-router-controller: Login
+    get:
+      summary: Login
+      tags: ["Auth"]
+      operationId: processLogin
+      consumes:
+      - "text/plain"
+      produces:
+      - "text/plain"
+      - "text/html"
+      description: The ResDesk login processor
+      parameters:
+        - name: q
+          in: query
+          description: auth level
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successful response will send no data"
+        302:
+          description: "302 response"
+          headers:
+            Location:
+              type: "string"
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /profile/notification:
+    x-swagger-router-controller: NotificationController
+    post:
+      summary: Creates a new notification
+      description: Creates a new notification
+      tags: ["Notification"]
+      operationId: createNotification
+      parameters:
+        - name: notification
+          in: body
+          description: The notification item
+          required: true
+          schema:
+            $ref: "#/definitions/Notification"
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/NotificationsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    get:
+      summary: Returns all notifications for a user
+      description: Returns all notifications for a user
+      tags: ["Notification"]
+      operationId: getNotificationsForUser
+      parameters:
+        - name: read
+          in: query
+          description: Get read or unread messages
+          required: true
+          type: string
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+          "200":
+            description: Success
+            schema:
+              $ref: "#/definitions/NotificationsResponse"
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/ErrorResponse"
+    put:
+      summary: Mark all notifications for user as read
+      description: Mark all notifications for user as read
+      tags: ["Notification"]
+      operationId: markAllNotificationsRead
+      parameters:
+        - name: read
+          in: query
+          description: Change message to read or unread
+          required: true
+          type: boolean
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/NotificationsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /profile/notification/{id}:
+    x-swagger-router-controller: NotificationController
+    put:
+      summary: Mark a single notification as read
+      description: Mark a single notification as read
+      tags: ["Notification"]
+      operationId: markNotificationRead
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the notification
+          required: true
+          type: string
+        - name: read
+          in: query
+          description: Change message to read or unread
+          required: true
+          type: boolean
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/NotificationsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    get:
+      summary: Returns notification for ID
+      description: Returns notification for ID
+      tags: ["Notification"]
+      operationId: getNotificationForID
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the notification
+          required: true
+          type: string
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/NotificationsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /token/refresh:
+    x-swagger-router-controller: Token
+    get:
+      summary: Refresh Token
+      tags: ["Token"]
+      operationId: refreshToken
+      description: refresh the json web token
+      parameters:
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+          "200":
+            description: Success
+            schema:
+              # a pointer to a definition
+              $ref: "#/definitions/RefreshTokenResponse"
+          # responses may fall through to errors
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/ErrorResponse"
+  /user:
+    x-swagger-router-controller: User
+    get:
+      summary: Get User
+      tags: ["User"]
+      operationId: getUserById
+      description: get user by jwt
+      parameters:
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+          "200":
+            description: Success
+            schema:
+              # a pointer to a definition
+              $ref: "#/definitions/UserResponse"
+          # responses may fall through to errors
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/ErrorResponse"
+  /profile/logout:
+    x-swagger-router-controller: Login
+    delete:
+      summary: Logout
+      tags: ["Auth"]
+      operationId: processLogout
+      description: log user out and delete token
+      parameters:
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+          "200":
+            description: Success
+            schema:
+              # a pointer to a definition
+              $ref: "#/definitions/DeleteTokenResponse"
+          # responses may fall through to errors
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/ErrorResponse"
+  /token/verify:
+    x-swagger-router-controller: Token
+    get:
+      summary: Verify Token
+      tags: ["Token"]
+      operationId: verifyToken
+      description: verify JWT
+      parameters:
+        - $ref: "#/parameters/AuthHeader"
+      responses:
+          "200":
+            description: Success
+            schema:
+              # a pointer to a definition
+              $ref: "#/definitions/RefreshTokenResponse"
+          # responses may fall through to errors
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/ErrorResponse"
+  /swagger:
+    x-swagger-pipe: swagger_raw
+definitions:
+  Notification:
+    required:
+      - to
+      - title
+      - content
+    description: Notification item
+    properties:
+      to:
+        type: array
+        items:
+          type: string
+      title:
+        type: string
+      content:
+        type: string
+      read:
+        type: boolean
+  NotificationResponse:
+    required:
+      - status
+      - error
+      - description
+      - data
+    properties:
+      status:
+        type: integer
+      error:
+        type: boolean
+      description:
+        type: string
+      data:
+        type: object
+        properties:
+          to:
+            type: string
+          title:
+            type: string
+          content:
+            type: string
+          read:
+            type: boolean
+          createdAt:
+            type: string
+          updatedAt:
+            type: string
+          id:
+            type: string
+  NotificationsResponse:
+    required:
+      - status
+      - error
+      - description
+      - data
+    properties:
+      status:
+        type: integer
+      error:
+        type: boolean
+      description:
+        type: string
+      data:
+        type: array
+        items:
+          type: object
+          properties:
+            to:
+              type: string
+            title:
+              type: string
+            content:
+              type: string
+            read:
+              type: boolean
+            createdAt:
+              type: string
+            updatedAt:
+              type: string
+            id:
+              type: string
+  UserResponse:
+    required:
+      - status
+      - error
+      - description
+      - data
+    properties:
+      status:
+        type: integer
+      error:
+        type: boolean
+      description:
+        type: string
+      data:
+        type: array
+        items:
+          type: object
+          properties:
+            bsu_id:
+              type: integer
+            entry_name:
+              type: string
+            name_last:
+              type: string
+            name_first:
+              type: string
+            name_preferred:
+              type: ['string','null']
+            room_space_description:
+              type: ['string','null']
+            phone_mobile_cell:
+              type: ['integer','null']
+            email:
+              type: ['string','null']
+            position:
+              type: ['string','null']
+            term_detail:
+              type: ['string','null']
+            position_date_start:
+              type: ['string','null']
+            position_date_end:
+              type: ['string','null']
+  DeleteTokenResponse:
+    required:
+      - status
+      - error
+      - description
+    properties:
+      status:
+        type: integer
+      error:
+        type: boolean
+      description:
+        type: string
+  RefreshTokenResponse:
+    required:
+      - status
+      - error
+      - description
+      - data
+    properties:
+      status:
+        type: integer
+      error:
+        type: boolean
+      description:
+        type: string
+      data:
+        type: object
+        properties:
+          header:
+            type: object
+            properties:
+              typ:
+                type: string
+              alg:
+                type: string
+          body:
+            type: object
+            properties:
+              sub:
+                type: string
+              name:
+                type: object
+                properties:
+                  first:
+                    type: string
+                  last:
+                    type: string
+              email:
+                type: string
+              iss:
+                type: string
+              permissions:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      type: string
+              jti:
+                type: string
+              iat:
+                type: integer
+              exp:
+                type: integer
+  Empty:
+    type: "object"
+  TestSuccess:
+    required:
+      - message
+    properties:
+      message:
+        type: string
+  ErrorResponse:
+    required:
+      - error
+      - status
+      - description
+    properties:
+      description:
+        type: string
+      status:
+        type: integer
+      error:
+        type: boolean
+        default: true
+      data:
+        type: object
+
+parameters:
+  AuthHeader:
+    name: Authorization
+    in: header
+    description: the user JWT token
+    required: true
+    type: string
